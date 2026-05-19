@@ -102,18 +102,116 @@ const LabWorkspace = ({
                         <!DOCTYPE html>
                         <html>
                           <head>
+                            <meta charset="utf-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
                             <style>
-                              body { font-family: 'Inter', sans-serif; padding: 20px; background-color: #f9f9f9; color: #333; }
-                              /* Added sensible default styling for common UI elements */
-                              button { background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; }
-                              button:hover { background: #2980b9; }
-                              input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: 'Inter', sans-serif; }
-                              .sim-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+                              * { box-sizing: border-box; margin: 0; padding: 0; }
+                              body { 
+                                font-family: 'Inter', sans-serif; 
+                                padding: 20px; 
+                                background-color: #f8fafc; 
+                                color: #0f172a;
+                                line-height: 1.5;
+                              }
+                              
+                              /* Premium Base Layout */
+                              .sim-workspace {
+                                display: flex;
+                                flex-direction: row;
+                                gap: 20px;
+                                background: #ffffff;
+                                padding: 24px;
+                                border-radius: 16px;
+                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                                min-height: 500px;
+                                height: 70vh;
+                              }
+                              
+                              .control-panel {
+                                flex: 1;
+                                background: #f1f5f9;
+                                padding: 20px;
+                                border-radius: 12px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 16px;
+                                max-width: 350px;
+                                overflow-y: auto;
+                              }
+                              
+                              .display-area {
+                                flex: 2;
+                                background: #0f172a;
+                                color: #fff;
+                                padding: 20px;
+                                border-radius: 12px;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                position: relative;
+                                overflow: hidden;
+                              }
+                              
+                              /* Common UI Elements */
+                              h1, h2, h3, h4 { color: #1e293b; margin-bottom: 8px; }
+                              label { font-weight: 500; color: #475569; font-size: 0.9rem; }
+                              
+                              button { 
+                                background: #6366f1; 
+                                color: white; 
+                                border: none; 
+                                padding: 12px 20px; 
+                                border-radius: 8px; 
+                                cursor: pointer; 
+                                font-family: inherit;
+                                font-weight: 600;
+                                transition: all 0.2s ease;
+                              }
+                              button:hover { background: #4f46e5; transform: translateY(-1px); }
+                              button:active { transform: translateY(0); }
+                              
+                              input, select, textarea { 
+                                padding: 10px; 
+                                border: 1px solid #cbd5e1; 
+                                border-radius: 6px; 
+                                font-family: inherit;
+                                font-size: 0.95rem;
+                                width: 100%;
+                                background: #fff;
+                              }
+                              input:focus, select:focus, textarea:focus {
+                                outline: none;
+                                border-color: #6366f1;
+                                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+                              }
+                              
                               ${experiment.simulation.css || ''}
                             </style>
                           </head>
                           <body>
                             ${experiment.simulation.html}
+                            <script>
+                              // Helper to make element selection easier
+                              const $ = selector => document.querySelector(selector);
+                              const $$ = selector => document.querySelectorAll(selector);
+                              
+                              window.onerror = function(message, source, lineno, colno, error) {
+                                console.error("Simulation JS Error:", error || message);
+                                const errorDiv = document.createElement('div');
+                                errorDiv.style.color = '#b91c1c';
+                                errorDiv.style.padding = '12px 16px';
+                                errorDiv.style.background = '#fef2f2';
+                                errorDiv.style.border = '1px solid #fee2e2';
+                                errorDiv.style.borderRadius = '8px';
+                                errorDiv.style.margin = '16px';
+                                errorDiv.style.fontSize = '0.9rem';
+                                errorDiv.textContent = "Runtime Error: " + message;
+                                document.body.appendChild(errorDiv);
+                                return true;
+                              };
+                            </script>
                             <script>
                               ${experiment.simulation.js || ''}
                             </script>

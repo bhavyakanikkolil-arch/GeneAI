@@ -1,17 +1,11 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { OpenAI } = require("openai");
+
+const openai = new OpenAI({
+  baseURL: 'http://127.0.0.1:11434/v1',
+  apiKey: 'ollama', // required but unused by ollama
+});
 
 const generateExperimentContent = async (topic, difficulty = "Intermediate", customInstructions = "") => {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey || apiKey === 'your_gemini_key_here') {
-    throw new Error("ERROR: Valid Google Gemini API Key is missing. Please paste your real GEMINI_API_KEY directly inside the server/.env file to launch the AI generator.");
-  }
-
-  // Authentic Generative AI Connection
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // Reverting to 1.5-flash to bypass the very strict 20/day quota on 2.5-flash
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-
   const prompt = `You are an expert Virtual Lab Experiment Creator and Educational Content Developer.
 The user has requested a new virtual lab experiment on the overall topic: "${topic}".
 Difficulty level: "${difficulty}".
@@ -46,9 +40,9 @@ Output the response strictly as a JSON object with the exact following structure
     }
   ],
   "simulation": {
-    "html": "Valid HTML elements for the interactive simulation (do not include html, head, or body tags)",
-    "css": "Valid CSS styling for the simulation elements",
-    "js": "Valid JavaScript logic to make the simulation interactive (do not include script tags)"
+    "html": "Valid HTML elements for the interactive simulation. Must include a container with a class 'sim-workspace'. Inside, provide a 'control-panel' div and a 'display-area' div (include <canvas> for 3D/graphs if needed). Do not include html, head, or body tags. Avoid using inline event handlers like onclick.",
+    "css": "Valid CSS styling for the simulation elements. Focus on a modern, premium look (glassmorphism, soft gradients, rounded corners). Ensure all interactive elements have hover and active states.",
+    "js": "Valid JavaScript logic to make the simulation fully interactive. You MUST implement the actual logic described in the procedure. Hook up inputs/sliders/buttons in the control-panel to update the display-area. Implement highly interactive 3D visualizations, dynamic graphs, or animations where applicable to the topic. Use clean, event-driven JS (e.g., use addEventListener). Do not include script tags."
   },
   "references": [
     "Author(s): Title of resource. Publisher/URL, Year."
@@ -59,10 +53,19 @@ CRITICAL INSTRUCTIONS:
 1. Provide exactly 6 questions in the preTest and 6 questions in the postTest.
 2. The "theory" field must ONLY contain valid HTML string. Do not use Markdown in the theory field.
 3. The "procedure" and "references" must be pure PLAIN TEXT. NO markdown formatting.
-4. Output pure valid JSON structure starting with {. Do not include any Markdown formatting blocks (e.g. \`\`\`json) in your response.`;
+4. The "simulation" fields must generate a REAL, WORKING highly interactive simulation (prioritize 3D and graphs). Do not just put placeholders.
+5. PRE-LOADED LIBRARIES in global JS: \`Papa\`, \`Chart\`, \`THREE\`, \`d3\`, \`Plotly\`. Use them directly, DO NOT use import statements.
+6. JAVASCRIPT RULES: Your JS code MUST be 100% complete and syntactically valid. Define ALL functions you call. Do not abbreviate code. Add null-checks before accessing DOM elements.
+7. Output pure valid JSON structure starting with {. Do not include any Markdown formatting blocks (e.g. \`\`\`json) in your response.`;
 
-  const result = await model.generateContent(prompt);
-  let text = result.response.text();
+  const response = await openai.chat.completions.create({
+    model: 'qwen2.5-coder:7b',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.1,
+    max_tokens: 4000
+  });
+
+  let text = response.choices[0].message.content;
 
   // Robust JSON Extraction: Find the search start from the first '{' and end at the last '}'
   const startIdx = text.indexOf('{');
@@ -83,24 +86,18 @@ CRITICAL INSTRUCTIONS:
   }
 };
 
-
 const answerChatQuestion = async (topic, question) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey || apiKey === 'your_gemini_key_here') {
-    throw new Error("ERROR: Valid Google Gemini API Key is missing. Connect your API key in .env.");
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-
   const prompt = `You are a helpful AI assistant helping a student understand a presentation on "${topic}". 
   The student asks: "${question}"
   Provide a clear, educational, and encouraging answer. Keep it concise.
   CRITICAL: DO NOT use markdown like **bold**, *italics*, or lists. Output pure plain text ONLY.`;
 
-  const result = await model.generateContent(prompt);
-  let text = result.response.text();
+  const response = await openai.chat.completions.create({
+    model: 'qwen2.5-coder:7b',
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  let text = response.choices[0].message.content;
   // Strip any accidental markdown bold or italics
   return text.replace(/\*\*/g, '').replace(/\*/g, '').trim();
 };
